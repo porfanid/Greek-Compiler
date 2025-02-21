@@ -177,7 +177,7 @@ class Lexer:
         return self.tokens
 
 if __name__ == '__main__':
-    lexer = Lexer("./test.gr")
+    lexer = Lexer("./tests/correct.gr")
     tokens = lexer.tokenize()
     for token in tokens:
         print(token)

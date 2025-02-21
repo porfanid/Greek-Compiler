@@ -11,9 +11,6 @@ if __name__ == '__main__':
 
     lexer = Lexer(args.file)
     tokens = lexer.tokenize()
-    print("Tokens:")
-    for token in tokens:
-        print(token)
 
     parser = Parser(tokens)
     try:
