@@ -65,10 +65,10 @@ jobs:
     - name: Run final task
       run: |
         source .venv/bin/activate
-        python combine.py
+        python scripts/combine.py
 
     - name: Upload combined_compiler.py
       uses: actions/upload-artifact@v4
       with:
         name: combined_compiler
-        path: combined_compiler.py
+        path: ./scripts/combined_compiler.py
