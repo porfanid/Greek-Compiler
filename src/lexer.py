@@ -1,3 +1,9 @@
+#########################################################################
+# Lexer class                                                           #
+# This part of the code handles the parsing of the file into tokens.    #
+# The Lexer class reads the file character by character and tokenizes it#
+# into a list of tuples.                                                #
+#########################################################################
 class TokenType:
     KEYWORD = 'KEYWORD'
     IDENTIFIER = 'IDENTIFIER'
@@ -52,6 +58,7 @@ class Lexer:
         else:
             self.current_char = self.next_char
         self.next_char = self.file.read(1)
+        # Line number is now only incremented here
         if self.current_char == '\n':
             self.line_number += 1
 
@@ -62,11 +69,13 @@ class Lexer:
     def skip_whitespace(self):
         """Skip spaces and newlines."""
         while self.current_char and self.current_char.isspace():
+            # Removed the line number increment from here
             self.advance()
 
     def skip_comment(self):
         """Skip over comments enclosed in `{}`."""
         while self.current_char and self.current_char != '}':
+            # Removed the line number increment from here
             self.advance()
         self.advance()  # Move past closing `}`
 
@@ -176,8 +185,6 @@ class Lexer:
         self.file.close()
         return self.tokens
 
-if __name__ == '__main__':
-    lexer = Lexer("./tests/correct.gr")
-    tokens = lexer.tokenize()
-    for token in tokens:
-        print(token)
+#########################################################################
+# End of Lexer class                                                    #
+#########################################################################

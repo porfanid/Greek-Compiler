@@ -1,3 +1,11 @@
+#################################################################################################################
+# This part of the code contains the Parser class that implements the syntax analyzer of the language.          #
+# The syntax analyzer checks if the program provided by the lexical analyzer is syntactically correct.          #
+# If the program is syntactically correct, it displays the message "Parsing completed successfully."            #
+# If the program is not syntactically correct, it displays the message "Parsing failed: {error_message}"        #
+# Finally, the parse method returns True if the program is syntactically correct, otherwise it returns False.   #
+#################################################################################################################
+
 from lexer import TokenType
 
 class Parser:
@@ -357,3 +365,8 @@ class Parser:
         """optional_sign : add_oper | """
         if self.current_token[1] in ['+', '-']:
             self.add_oper()
+
+
+#############################################################################################################
+# End of Parser class.                                                                                      #
+#############################################################################################################

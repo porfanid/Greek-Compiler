@@ -1,7 +1,12 @@
 # tests/test_parser.py
+import sys
+import os
+
+# Add the src directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 import unittest
-from lexer import Lexer
-from parser import Parser
+from src.lexer import Lexer
+from src.parser import Parser
 
 class TestParser(unittest.TestCase):
     def test_parser(self):
