@@ -13,8 +13,4 @@ if __name__ == '__main__':
     tokens = lexer.tokenize()
 
     parser = Parser(tokens)
-    try:
-        parser.parse()
-        print("Parsing completed successfully.")
-    except SyntaxError as e:
-        print(f"Syntax error: {e}")
+    parser.parse()

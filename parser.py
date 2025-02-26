@@ -1,138 +1,359 @@
-# Define the states
 from lexer import TokenType
-class State:
-    START = 'START'
-    DECLARATION = 'DECLARATION'
-    FUNCTION = 'FUNCTION'
-    PROCEDURE = 'PROCEDURE'
-    PROGRAM_BLOCK = 'PROGRAM_BLOCK'
-    STATEMENT = 'STATEMENT'
-    PARAMETERS = 'PARAMETERS'
-    FUNCTION_BODY = 'FUNCTION_BODY'
-    REPEAT_LOOP = 'REPEAT_LOOP'
-    FOR_LOOP = 'FOR_LOOP'
-    END = 'END'
-
-# Define the state transitions
-state_matrix = {
-    State.START: {
-        'πρόγραμμα': State.PROGRAM_BLOCK,
-    },
-    State.PROGRAM_BLOCK: {
-        'IDENTIFIER': State.DECLARATION,  # Handle the program name
-        'δήλωση': State.DECLARATION,
-        'συνάρτηση': State.FUNCTION,
-        'διαδικασία': State.PROCEDURE,
-        'αρχή_προγράμματος': State.STATEMENT,
-        'τέλος_προγράμματος': State.END,
-    },
-    State.DECLARATION: {
-        'IDENTIFIER': State.DECLARATION,  # Handle multiple identifiers
-        'δήλωση': State.DECLARATION,
-        'συνάρτηση': State.FUNCTION,
-        'διαδικασία': State.PROCEDURE,
-        'αρχή_προγράμματος': State.STATEMENT,
-        'τέλος_προγράμματος': State.END,
-        'SEPARATOR': State.DECLARATION,  # Handle separators
-    },
-    State.FUNCTION: {
-        'IDENTIFIER': State.FUNCTION,  # Handle the function name
-        '(': State.PARAMETERS,  # Transition to PARAMETERS state
-    },
-    State.PARAMETERS: {
-        'IDENTIFIER': State.PARAMETERS,  # Handle parameter names
-        'SEPARATOR': State.PARAMETERS,  # Handle separators
-        ')': State.FUNCTION_BODY,  # Transition to FUNCTION_BODY state
-    },
-    State.FUNCTION_BODY: {
-        'διαπροσωπεία': State.FUNCTION_BODY,
-        'είσοδος': State.FUNCTION_BODY,
-        'έξοδος': State.FUNCTION_BODY,
-        'IDENTIFIER': State.STATEMENT,  # Allow identifiers as statements
-        ':=': State.STATEMENT,  # Allow assignments
-        'αρχή_συνάρτησης': State.STATEMENT,
-        'τέλος_συνάρτησης': State.PROGRAM_BLOCK,
-    },
-    State.PROCEDURE: {
-        'IDENTIFIER': State.STATEMENT,  # Correct transition for procedure name
-        '(': State.PARAMETERS,  # Transition to PARAMETERS state
-    },
-    State.STATEMENT: {
-        'IDENTIFIER': State.STATEMENT,
-        ':=': State.STATEMENT,
-        'επανάλαβε': State.REPEAT_LOOP,
-        'για': State.FOR_LOOP,
-        'τέλος_προγράμματος': State.END,
-        'τέλος_συνάρτησης': State.PROGRAM_BLOCK,  # Allow function end inside statements
-        'τέλος_διαδικασίας': State.PROGRAM_BLOCK,  # Ensure procedures end correctly
-    },
-    State.REPEAT_LOOP: {
-        'IDENTIFIER': State.STATEMENT,
-        ':=': State.STATEMENT,
-        'μέχρι': State.STATEMENT,  # Ensure repeat loops require an exit condition
-    },
-    State.FOR_LOOP: {
-        'IDENTIFIER': State.STATEMENT,
-        ':=': State.STATEMENT,
-        'έως': State.STATEMENT,
-        'με_βήμα': State.STATEMENT,
-        'επαναλαβε': State.STATEMENT,
-        'για_τέλος': State.STATEMENT,
-    },
-    State.END: {}
-}
 
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
         self.current_token_index = 0
         self.current_token = self.tokens[self.current_token_index]
-        self.current_state = State.START
+        self.errors = []
 
-    def eat(self, token_type):
-        if self.current_token[0] == token_type:
-            self.current_token_index += 1
-            if self.current_token_index < len(self.tokens):
-                self.current_token = self.tokens[self.current_token_index]
-        else:
-            raise SyntaxError(f'Unexpected token: {self.tokens[self.current_token_index-1]}')
+    def error(self, message):
+        _, token_value, line = self.current_token
+        error_msg = f"Error at line {line}: {message}, got '{token_value}'"
+        self.errors.append(error_msg)
+        print(error_msg)
+        raise SyntaxError(error_msg)
 
-    def transition(self, token_value):
-        if token_value in state_matrix[self.current_state]:
-            self.current_state = state_matrix[self.current_state][token_value]
-        elif self.current_state == State.PROGRAM_BLOCK and self.current_token[0] == TokenType.IDENTIFIER:
-            self.current_state = State.DECLARATION
-        elif self.current_state == State.DECLARATION and self.current_token[0] in {TokenType.IDENTIFIER, TokenType.SEPARATOR}:
-            self.current_state = State.DECLARATION
-        elif self.current_state == State.FUNCTION and self.current_token[0] == TokenType.IDENTIFIER:
-            self.current_state = State.FUNCTION
-        elif self.current_state == State.FUNCTION and self.current_token[0] == TokenType.GROUPING and token_value == '(':
-            self.current_state = State.PARAMETERS
-        elif self.current_state == State.PROCEDURE and self.current_token[0] == TokenType.IDENTIFIER:
-            self.current_state = State.STATEMENT  # Ensure procedure name transitions correctly
-        elif self.current_state == State.FOR_LOOP and token_value in {'έως', 'με_βήμα', 'επαναλαβε', 'για_τέλος'}:
-            self.current_state = State.STATEMENT
-        elif self.current_state == State.PARAMETERS and self.current_token[0] in {TokenType.IDENTIFIER, TokenType.SEPARATOR, TokenType.GROUPING}:
-            self.current_state = State.PARAMETERS
-            if token_value == ')':
-                self.current_state = State.FUNCTION_BODY
-        elif self.current_state == State.FUNCTION_BODY:
-            if token_value in {'διαπροσωπεία', 'είσοδος', 'έξοδος'}:
-                self.current_state = State.FUNCTION_BODY
-            elif self.current_token[0] == TokenType.IDENTIFIER or token_value == ':=':
-                self.current_state = State.STATEMENT  # Transition to statement handling inside function body
-            elif token_value == 'αρχή_συνάρτησης':
-                self.current_state = State.STATEMENT
-        elif self.current_state == State.REPEAT_LOOP:
-            if token_value == 'μέχρι':
-                self.current_state = State.STATEMENT
+    def advance(self):
+        self.current_token_index += 1
+        if self.current_token_index < len(self.tokens):
+            self.current_token = self.tokens[self.current_token_index]
+        return self.current_token
+
+    def eat(self, token_type=None, token_value=None):
+        if token_type and self.current_token[0] != token_type:
+            self.error(f"Expected token type {token_type}")
+        elif token_value and self.current_token[1] != token_value:
+            self.error(f"Expected '{token_value}'")
         else:
-            raise SyntaxError(f'Unexpected token: {token_value} in state: {self.current_state}')
+            return self.advance()
 
     def parse(self):
-        while self.current_state != State.END:
-            token_type, token_value, _ = self.current_token
-            self.transition(token_value)
-            self.eat(token_type)
-            print(self.current_token)
-        print("Parsing completed successfully.")
+        """Parse the program according to the grammar."""
+        try:
+            self.program()
+            print("Parsing completed successfully.")
+            return True
+        except SyntaxError as e:
+            print(f"Parsing failed: {e}")
+            return False
+
+    # Κανόνες γραμματικής
+
+    def program(self):
+        """program : 'πρόγραμμα' ID programblock"""
+        self.eat(token_value='πρόγραμμα')
+        self.eat(TokenType.IDENTIFIER)
+        self.programblock()
+
+    def programblock(self):
+        """programblock : declarations subprograms 'αρχή_προγράμματος' sequence 'τέλος_προγράμματος'"""
+        self.declarations()
+        self.subprograms()
+        self.eat(token_value='αρχή_προγράμματος')
+        self.sequence()
+        self.eat(token_value='τέλος_προγράμματος')
+
+    def declarations(self):
+        """declarations : ('δήλωση' varlist)* | """
+        while self.current_token[1] == 'δήλωση':
+            self.eat(token_value='δήλωση')
+            self.varlist()
+
+    def varlist(self):
+        """varlist : ID (',' ID)*"""
+        self.eat(TokenType.IDENTIFIER)
+        while self.current_token[1] == ',':
+            self.eat(token_value=',')
+            self.eat(TokenType.IDENTIFIER)
+
+    def subprograms(self):
+        """subprograms : (func | proc)*"""
+        while self.current_token[1] in ['συνάρτηση', 'διαδικασία']:
+            if self.current_token[1] == 'συνάρτηση':
+                self.func()
+            else:
+                self.proc()
+
+    def func(self):
+        """func : 'συνάρτηση' ID '(' formalparlist ')' funcblock"""
+        self.eat(token_value='συνάρτηση')
+        self.eat(TokenType.IDENTIFIER)
+        self.eat(token_value='(')
+        self.formalparlist()
+        self.eat(token_value=')')
+        self.funcblock()
+
+    def proc(self):
+        """proc : 'διαδικασία' ID '(' formalparlist ')' procblock"""
+        self.eat(token_value='διαδικασία')
+        self.eat(TokenType.IDENTIFIER)
+        self.eat(token_value='(')
+        self.formalparlist()
+        self.eat(token_value=')')
+        self.procblock()
+
+    def formalparlist(self):
+        """formalparlist : varlist | """
+        if self.current_token[0] == TokenType.IDENTIFIER:
+            self.varlist()
+
+    def funcblock(self):
+        """funcblock : 'διαπροσωπεία' funcinput funcoutput declarations 'αρχή_συνάρτησης' sequence 'τέλος_συνάρτησης'"""
+        self.eat(token_value='διαπροσωπεία')
+        self.funcinput()
+        self.funcoutput()
+        self.declarations()
+        self.eat(token_value='αρχή_συνάρτησης')
+        self.sequence()
+        self.eat(token_value='τέλος_συνάρτησης')
+
+    def procblock(self):
+        """procblock : 'διαπροσωπεία' funcinput funcoutput declarations 'αρχή_διαδικασίας' sequence 'τέλος_διαδικασίας'"""
+        self.eat(token_value='διαπροσωπεία')
+        self.funcinput()
+        self.funcoutput()
+        self.declarations()
+        self.eat(token_value='αρχή_διαδικασίας')
+        self.sequence()
+        self.eat(token_value='τέλος_διαδικασίας')
+
+    def funcinput(self):
+        """funcinput : 'είσοδος' varlist | """
+        if self.current_token[1] == 'είσοδος':
+            self.eat(token_value='είσοδος')
+            self.varlist()
+
+    def funcoutput(self):
+        """funcoutput : 'έξοδος' varlist | """
+        if self.current_token[1] == 'έξοδος':
+            self.eat(token_value='έξοδος')
+            self.varlist()
+
+    def sequence(self):
+        """sequence : statement (';' statement)*"""
+        self.statement()
+        while self.current_token[1] == ';':
+            self.eat(token_value=';')
+            self.statement()
+
+    def statement(self):
+        """
+        statement : assignment_stat
+                 | if_stat
+                 | while_stat
+                 | do_stat
+                 | for_stat
+                 | input_stat
+                 | print_stat
+                 | call_stat
+        """
+        if self.current_token[0] == TokenType.IDENTIFIER:
+            self.assignment_stat()
+        elif self.current_token[1] == 'εάν':
+            self.if_stat()
+        elif self.current_token[1] == 'όσο':
+            self.while_stat()
+        elif self.current_token[1] == 'επανάλαβε':
+            self.do_stat()
+        elif self.current_token[1] == 'για':
+            self.for_stat()
+        elif self.current_token[1] == 'διάβασε':
+            self.input_stat()
+        elif self.current_token[1] == 'γράψε':
+            self.print_stat()
+        elif self.current_token[1] == 'εκτέλεσε':
+            self.call_stat()
+        else:
+            self.error(f"Expected statement, got {self.current_token[1]}")
+
+    def assignment_stat(self):
+        """assignment_stat : ID ':=' expression"""
+        self.eat(TokenType.IDENTIFIER)
+        self.eat(token_value=':=')
+        self.expression()
+
+    def if_stat(self):
+        """if_stat : 'εάν' condition 'τότε' sequence elsepart 'εάν_τέλος'"""
+        self.eat(token_value='εάν')
+        self.condition()
+        self.eat(token_value='τότε')
+        self.sequence()
+        self.elsepart()
+        self.eat(token_value='εάν_τέλος')
+
+    def elsepart(self):
+        """elsepart : 'αλλιώς' sequence | """
+        if self.current_token[1] == 'αλλιώς':
+            self.eat(token_value='αλλιώς')
+            self.sequence()
+
+    def while_stat(self):
+        """while_stat : 'όσο' condition 'επανάλαβε' sequence 'όσο_τέλος'"""
+        self.eat(token_value='όσο')
+        self.condition()
+        self.eat(token_value='επανάλαβε')
+        self.sequence()
+        self.eat(token_value='όσο_τέλος')
+
+    def do_stat(self):
+        """do_stat : 'επανάλαβε' sequence 'μέχρι' condition"""
+        self.eat(token_value='επανάλαβε')
+        self.sequence()
+        self.eat(token_value='μέχρι')
+        self.condition()
+
+    def for_stat(self):
+        """for_stat : 'για' ID ':=' expression 'έως' expression step 'επανάλαβε' sequence 'για_τέλος'"""
+        self.eat(token_value='για')
+        self.eat(TokenType.IDENTIFIER)
+        self.eat(token_value=':=')
+        self.expression()
+        self.eat(token_value='έως')
+        self.expression()
+        self.step()
+        self.eat(token_value='επανάλαβε')
+        self.sequence()
+        self.eat(token_value='για_τέλος')
+
+    def step(self):
+        """step : 'με_βήμα' expression | """
+        if self.current_token[1] == 'με_βήμα':
+            self.eat(token_value='με_βήμα')
+            self.expression()
+
+    def print_stat(self):
+        """print_stat : 'γράψε' expression"""
+        self.eat(token_value='γράψε')
+        self.expression()
+
+    def input_stat(self):
+        """input_stat : 'διάβασε' ID"""
+        self.eat(token_value='διάβασε')
+        self.eat(TokenType.IDENTIFIER)
+
+    def call_stat(self):
+        """call_stat : 'εκτέλεσε' ID idtail"""
+        self.eat(token_value='εκτέλεσε')
+        self.eat(TokenType.IDENTIFIER)
+        self.idtail()
+
+    def idtail(self):
+        """idtail : actualpars | """
+        if self.current_token[1] == '(':
+            self.actualpars()
+
+    def actualpars(self):
+        """actualpars : '(' actualparlist ')'"""
+        self.eat(token_value='(')
+        self.actualparlist()
+        self.eat(token_value=')')
+
+    def actualparlist(self):
+        """actualparlist : actualparitem (',' actualparitem)* | """
+        if self.current_token[1] != ')':
+            self.actualparitem()
+            while self.current_token[1] == ',':
+                self.eat(token_value=',')
+                self.actualparitem()
+
+    def actualparitem(self):
+        """actualparitem : expression | '%' ID"""
+        if self.current_token[1] == '%':
+            self.eat(token_value='%')
+            self.eat(TokenType.IDENTIFIER)
+        else:
+            self.expression()
+
+    def condition(self):
+        """condition : boolterm ('ή' boolterm)*"""
+        self.boolterm()
+        while self.current_token[1] == 'ή':
+            self.eat(token_value='ή')
+            self.boolterm()
+
+    def boolterm(self):
+        """boolterm : boolfactor ('και' boolfactor)*"""
+        self.boolfactor()
+        while self.current_token[1] == 'και':
+            self.eat(token_value='και')
+            self.boolfactor()
+
+    def boolfactor(self):
+        """
+        boolfactor : 'όχι' '[' condition ']'
+                   | '[' condition ']'
+                   | expression relational_oper expression
+        """
+        if self.current_token[1] == 'όχι':
+            self.eat(token_value='όχι')
+            self.eat(token_value='[')
+            self.condition()
+            self.eat(token_value=']')
+        elif self.current_token[1] == '[':
+            self.eat(token_value='[')
+            self.condition()
+            self.eat(token_value=']')
+        else:
+            self.expression()
+            self.relational_oper()
+            self.expression()
+
+    def expression(self):
+        """expression : optional_sign term (add_oper term)*"""
+        self.optional_sign()
+        self.term()
+        while self.current_token[1] in ['+', '-']:
+            self.add_oper()
+            self.term()
+
+    def term(self):
+        """term : factor (mul_oper factor)*"""
+        self.factor()
+        while self.current_token[1] in ['*', '/']:
+            self.mul_oper()
+            self.factor()
+
+    def factor(self):
+        """
+        factor : INTEGER
+               | '(' expression ')'
+               | ID idtail
+        """
+        if self.current_token[0] == TokenType.NUMBER:
+            self.eat(TokenType.NUMBER)
+        elif self.current_token[1] == '(':
+            self.eat(token_value='(')
+            self.expression()
+            self.eat(token_value=')')
+        elif self.current_token[0] == TokenType.IDENTIFIER:
+            self.eat(TokenType.IDENTIFIER)
+            self.idtail()
+        else:
+            self.error(f"Expected factor, got {self.current_token[1]}")
+
+    def relational_oper(self):
+        """relational_oper : '=' | '<=' | '>=' | '<>' | '<' | '>'"""
+        if self.current_token[0] == TokenType.RELATIONAL_OPERATOR:
+            self.eat(TokenType.RELATIONAL_OPERATOR)
+        else:
+            self.error("Expected relational operator")
+
+    def add_oper(self):
+        """add_oper : '+' | '-'"""
+        if self.current_token[1] in ['+', '-']:
+            self.eat(TokenType.OPERATOR)
+        else:
+            self.error("Expected '+' or '-'")
+
+    def mul_oper(self):
+        """mul_oper : '*' | '/'"""
+        if self.current_token[1] in ['*', '/']:
+            self.eat(TokenType.OPERATOR)
+        else:
+            self.error("Expected '*' or '/'")
+
+    def optional_sign(self):
+        """optional_sign : add_oper | """
+        if self.current_token[1] in ['+', '-']:
+            self.add_oper()
