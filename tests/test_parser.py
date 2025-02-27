@@ -13,21 +13,14 @@ class TestParser(unittest.TestCase):
         lexer = Lexer("./tests/correct.gr")
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        try:
-            result = parser.parse()
-            self.assertTrue(result)
-        except SyntaxError as e:
-            self.fail(e)
+        parser.parse()
 
     def test_parser_false(self):
         lexer = Lexer("./tests/false.gr")
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        try:
-            result = parser.parse()
-            self.assertFalse(result)
-        except SyntaxError as e:
-            self.fail(e)
+        with self.assertRaises(SyntaxError):
+            parser.parse()
 
 if __name__ == '__main__':
     unittest.main()

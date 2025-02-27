@@ -42,13 +42,8 @@ class Parser:
 
     def parse(self):
         """Parse the program according to the grammar."""
-        try:
-            self.program()
-            print("Parsing completed successfully.")
-            return True
-        except SyntaxError as e:
-            print(f"Parsing failed: {e}")
-            return False
+        self.program()
+        print("Parsing completed successfully.")
 
     # Κανόνες γραμματικής
 
