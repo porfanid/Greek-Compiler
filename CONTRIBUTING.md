@@ -1,6 +1,3 @@
-2. **CONTRIBUTING.md**: Provides guidelines for contributing to the project.
-
-```markdown
 # Contributing to Greek Plus Plus Compiler
 
 ## How to Contribute
