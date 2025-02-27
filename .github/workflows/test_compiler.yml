@@ -59,7 +59,7 @@ jobs:
       run: |
         python -m venv .venv
         source .venv/bin/activate
-        sudo apt-get install gcov
+        sudo apt-get install gcovr
         pip install -r requirements.txt
         coverage xml -o coverage.xml
         tree
