@@ -9,13 +9,23 @@ from src.lexer import Lexer
 from src.parser import Parser
 
 class TestParser(unittest.TestCase):
-    def test_parser(self):
+    def test_parser_correct(self):
         lexer = Lexer("./tests/correct.gr")
         tokens = lexer.tokenize()
         parser = Parser(tokens)
         try:
-            parser.parse()
-            self.assertTrue(True)
+            result = parser.parse()
+            self.assertTrue(result)
+        except SyntaxError as e:
+            self.fail(e)
+
+    def test_parser_false(self):
+        lexer = Lexer("./tests/false.gr")
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            result = parser.parse()
+            self.assertFalse(result)
         except SyntaxError as e:
             self.fail(e)
 
