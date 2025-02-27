@@ -62,13 +62,22 @@ jobs:
         source .venv/bin/activate
         pip install -r requirements.txt
 
-    - name: Run final task
+    - name: Install TeX Live
+      run: sudo apt-get install -y texlive-xetex
+
+    - name: Combine the scripts into one
       run: |
         source .venv/bin/activate
         python scripts/combine.py
+
+    - name: Compile the report
+      run: |
+        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
 
     - name: Upload combined_compiler.py
       uses: actions/upload-artifact@v4
       with:
         name: combined_compiler
-        path: combined_compiler.py
+        path: |
+          combined_compiler.py
+          out/report.pdf
