@@ -1,5 +1,13 @@
 import sys
 import os
+
+
+# Add the src directory to the Python path
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../src'))
+print(path)
+sys.path.insert(0, path)
+
+
 import psutil
 import argparse
 import time
@@ -7,10 +15,7 @@ from functools import wraps
 from lexer import Lexer
 from parser import Parser
 
-# Add the src directory to the Python path
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../src'))
-print(path)
-sys.path.insert(0, path)
+
 
 def monitor_resources(func):
     @wraps(func)
