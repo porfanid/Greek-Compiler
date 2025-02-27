@@ -24,6 +24,10 @@ class Parser:
 
     def advance(self):
         self.current_token_index += 1
+        # ignore comments
+        while self.tokens[self.current_token_index][0] == TokenType.COMMENT:
+            self.current_token_index += 1
+
         if self.current_token_index < len(self.tokens):
             self.current_token = self.tokens[self.current_token_index]
         return self.current_token
