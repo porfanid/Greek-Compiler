@@ -25,7 +25,7 @@ class Parser:
     def advance(self):
         self.current_token_index += 1
         # ignore comments
-        while self.tokens[self.current_token_index][0] == TokenType.COMMENT:
+        while self.current_token_index < len(self.tokens) and self.tokens[self.current_token_index][0] == TokenType.COMMENT:
             self.current_token_index += 1
 
         if self.current_token_index < len(self.tokens):
@@ -43,7 +43,6 @@ class Parser:
     def parse(self):
         """Parse the program according to the grammar."""
         self.program()
-        print("Parsing completed successfully.")
 
     # Κανόνες γραμματικής
 
@@ -146,6 +145,10 @@ class Parser:
         self.statement()
         while self.current_token[1] == ';':
             self.eat(token_value=';')
+            # Check if we've reached the end of the sequence
+            if self.current_token[1] in ['τέλος_προγράμματος', 'τέλος_συνάρτησης', 'τέλος_διαδικασίας',
+                                        'αλλιώς', 'εάν_τέλος', 'όσο_τέλος', 'για_τέλος', 'μέχρι']:
+                break
             self.statement()
 
     def statement(self):
@@ -176,7 +179,7 @@ class Parser:
         elif self.current_token[1] == 'εκτέλεσε':
             self.call_stat()
         else:
-            self.error(f"Expected statement, got {self.current_token[1]}")
+            self.error(f"Expected statement")
 
     def assignment_stat(self):
         """assignment_stat : ID ':=' expression"""
