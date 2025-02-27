@@ -63,7 +63,8 @@ jobs:
         pip install -r requirements.txt
 
     - name: Install TeX Live
-      run: sudo apt-get install -y texlive-xetex
+      run: |
+        sudo apt-get install -y texlive-xetex fonts-freefont-ttf
 
     - name: Combine the scripts into one
       run: |
