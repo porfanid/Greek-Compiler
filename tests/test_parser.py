@@ -7,20 +7,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../s
 import unittest
 from src.lexer import Lexer
 from src.parser import Parser
+from src.compiler import perform_syntax_analysis
 
 class TestParser(unittest.TestCase):
     def test_parser_correct(self):
-        lexer = Lexer("./tests/correct.gr")
-        tokens = lexer.tokenize()
-        parser = Parser(tokens)
-        parser.parse()
+        file= "./tests/correct.gr"
+        perform_syntax_analysis(file)
 
     def test_parser_false(self):
-        lexer = Lexer("./tests/false.gr")
-        tokens = lexer.tokenize()
-        parser = Parser(tokens)
+        file = "./tests/false.gr"
         with self.assertRaises(SyntaxError):
-            parser.parse()
+            perform_syntax_analysis(file)
 
 if __name__ == '__main__':
     unittest.main()
