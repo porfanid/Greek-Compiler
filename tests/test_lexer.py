@@ -85,6 +85,22 @@ class TestLexer(unittest.TestCase):
         ]
         self.assertEqual(tokens[:3], expected_tokens)
 
+    def test_lexer_tokenizes_separators_correctly(self):
+        lexer = Lexer("./tests/separators.gr")
+        tokens = lexer.tokenize()
+        expected_tokens = [
+            ('SEPARATOR', ';', 1), ('SEPARATOR', ',', 2), ('SEPARATOR', ':', 3)
+        ]
+        self.assertEqual(tokens[:3], expected_tokens)
+
+    def test_lexer_tokenizes_equal_sign_correctly(self):
+        lexer = Lexer("./tests/equal_sign.gr")
+        tokens = lexer.tokenize()
+        expected_tokens = [
+            ('RELATIONAL_OPERATOR', '=', 1)
+        ]
+        self.assertEqual(tokens[:1], expected_tokens)
+
 
 if __name__ == '__main__':
     unittest.main()
