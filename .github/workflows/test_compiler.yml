@@ -78,7 +78,7 @@ jobs:
     - name: Compile the report
       run: |
         xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
-    
+        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
 
     - name: Move report.pdf to root directory
       run: |
