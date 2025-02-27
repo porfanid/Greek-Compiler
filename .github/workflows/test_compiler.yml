@@ -59,8 +59,9 @@ jobs:
       run: |
         python -m venv .venv
         source .venv/bin/activate
+        sudo apt-get install gcov
         pip install -r requirements.txt
-        pytest --cov=src --cov-branch --cov-report=xml:coverage.xml --cov-report=term
+        coverage xml -o coverage.xml
         tree
 
     - name: Upload coverage reports to Codecov
