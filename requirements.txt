@@ -3,3 +3,4 @@ pytest-cov
 coverage
 pylint
 psutil
+matplotlib

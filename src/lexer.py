@@ -236,7 +236,7 @@ class Lexer:
                     continue
 
                 print(f'Unexpected character: {self.current_char}')
-                raise SyntaxError(f'Unexpected character: {self.current_char}')
+                raise SyntaxError(f'Unexpected character: {self.current_char} in line {self.line_number}')
 
             self.tokens.append((TokenType.EOF, 'EOF', self.line_number))
             return self.tokens

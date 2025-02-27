@@ -1,0 +1,24 @@
+codecov:
+  branch: master # set new Default branch
+  max_report_age: '12h'
+  notify:
+      require_ci_to_pass: yes
+      after_n_builds: 5
+      wait_for_ci: yes
+
+
+# Global YAML [lower on hierarchy]
+coverage:
+  round: down
+  precision: 5
+
+# Repository YAML [higher on hierarchy]
+coverage:
+  round: up
+  range: 0..10
+
+# Used in Codecov after updating
+coverage:
+  round: up
+  range: 0..10
+  precision: 5
