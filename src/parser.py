@@ -106,7 +106,8 @@ class Parser:
             self.varlist()
 
     def funcblock(self):
-        """funcblock : 'διαπροσωπεία' funcinput funcoutput declarations subprograms 'αρχή_συνάρτησης' sequence 'τέλος_συνάρτησης'"""
+        """funcblock : 'διαπροσωπεία' funcinput funcoutput declarations subprograms
+         'αρχή_συνάρτησης' sequence 'τέλος_συνάρτησης'"""
         self.eat(token_value='διαπροσωπεία')
         self.funcinput()
         self.funcoutput()
@@ -117,7 +118,8 @@ class Parser:
         self.eat(token_value='τέλος_συνάρτησης')
 
     def procblock(self):
-        """procblock : 'διαπροσωπεία' funcinput funcoutput declarations subprograms 'αρχή_διαδικασίας' sequence 'τέλος_διαδικασίας'"""
+        """procblock : 'διαπροσωπεία' funcinput funcoutput declarations subprograms
+         'αρχή_διαδικασίας' sequence 'τέλος_διαδικασίας'"""
         self.eat(token_value='διαπροσωπεία')
         self.funcinput()
         self.funcoutput()

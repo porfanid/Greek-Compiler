@@ -16,6 +16,7 @@ def perform_syntax_analysis(file):
 
     return tokens
 
+
 if __name__ == '__main__':
     # Create an argument parser to handle command-line arguments
     parser = argparse.ArgumentParser(description='Process a source code file.')
