@@ -1,7 +1,6 @@
 import argparse
 from lexer import Lexer
 from syntaxAST import Syntax
-from parser import Parser
 
 
 def perform_syntax_analysis(file):
