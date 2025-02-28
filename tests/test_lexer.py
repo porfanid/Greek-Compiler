@@ -106,6 +106,3 @@ class TestLexer(unittest.TestCase):
             lexer = Lexer("./tests/non_existent_file.gr")
             lexer.tokenize()
 
-
-if __name__ == '__main__':
-    unittest.main()

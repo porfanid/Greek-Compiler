@@ -8,7 +8,7 @@ import unittest
 from src.compiler import perform_syntax_analysis
 
 
-class TestParser(unittest.TestCase):
+class TestSyntax(unittest.TestCase):
     def test_parser_correct(self):
         file =  "./tests/correct.gr"
         perform_syntax_analysis(file)
@@ -17,7 +17,3 @@ class TestParser(unittest.TestCase):
         file = "./tests/false.gr"
         with self.assertRaises(SyntaxError):
             perform_syntax_analysis(file)
-
-
-if __name__ == '__main__':
-    unittest.main()

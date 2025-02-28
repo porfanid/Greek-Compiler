@@ -1,5 +1,6 @@
 import argparse
 from lexer import Lexer
+from syntaxAST import Syntax
 from parser import Parser
 
 
@@ -9,11 +10,11 @@ def perform_syntax_analysis(file):
     # Tokenize the source code
     tokens = lexer.tokenize()
     # Initialize the parser with the generated tokens
-    parser = Parser(tokens)
+    syntax = Syntax(tokens)
 
     # Parse the tokens to perform syntax analysis
-    parser.parse()
-
+    ast = syntax.parse()
+    print(ast.to_dict())
     return tokens
 
 

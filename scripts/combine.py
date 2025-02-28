@@ -16,4 +16,4 @@ def combine_files(output_file, *input_files):
 
 
 combine_files('combined_compiler.py',
-              "scripts/header.py", 'src/lexer.py', 'src/parser.py', 'src/compiler.py')
+              "scripts/header.py", 'src/lexer.py', 'src/syntaxAST.py', 'src/compiler.py')

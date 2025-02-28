@@ -1,5 +1,5 @@
 #################################################################################################################
-# This part of the code contains the Parser class that implements the syntax analyzer of the language.          #
+# This part of the code contains the Syntax class that implements the syntax analyzer of the language.          #
 # The syntax analyzer checks if the program provided by the lexical analyzer is syntactically correct.          #
 # If the program is syntactically correct, it displays the message "Parsing completed successfully."            #
 # If the program is not syntactically correct, it displays the message "Parsing failed: {error_message}"        #
@@ -8,7 +8,7 @@
 
 from lexer import TokenType
 
-class Parser:
+class Syntax:
     def __init__(self, tokens):
         self.tokens = tokens
         self.current_token_index = 0
@@ -374,5 +374,5 @@ class Parser:
 
 
 #############################################################################################################
-# End of Parser class.                                                                                      #
+# End of Syntax class.                                                                                      #
 #############################################################################################################

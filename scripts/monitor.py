@@ -13,7 +13,7 @@ import argparse
 import time
 from functools import wraps
 from lexer import Lexer
-from parser import Parser
+from syntaxAST import Syntax
 
 
 
@@ -49,7 +49,7 @@ def perform_syntax_analysis(file):
     # Tokenize the source code
     tokens = lexer.tokenize()
     # Initialize the parser with the generated tokens
-    parser = Parser(tokens)
+    parser = Syntax(tokens)
 
     # Parse the tokens to perform syntax analysis
     parser.parse()
