@@ -8,7 +8,7 @@ class TestCombinedCompiler(unittest.TestCase):
 
 
     def setUp(self):
-        self.input_file = 'tests/correct.gr'
+        self.input_file = 'tests/syntax_inputs/correct.gr'
         self.original_output = 'original_output.txt'
         self.combined_output = 'combined_output.txt'
         # Check if the combined compiler file exists
@@ -19,7 +19,7 @@ class TestCombinedCompiler(unittest.TestCase):
 
     def run_compiler(self, compiler_path, input_file, output_file):
         with open(output_file, 'w') as out:
-            subprocess.run(['python', compiler_path, input_file], stdout=out, stderr=subprocess.PIPE)
+            subprocess.run(['python', compiler_path, "-d", input_file], stdout=out, stderr=subprocess.PIPE)
 
 
     def test_combined_compiler(self):
