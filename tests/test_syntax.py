@@ -11,9 +11,9 @@ from src.compiler import perform_syntax_analysis
 class TestSyntax(unittest.TestCase):
     def test_parser_correct(self):
         file =  "./tests/syntax_inputs/correct.gr"
-        perform_syntax_analysis(file, False)
+        perform_syntax_analysis(file, True)
 
     def test_parser_false(self):
         file = "./tests/syntax_inputs/false.gr"
         with self.assertRaises(SyntaxError):
-            perform_syntax_analysis(file, False)
+            perform_syntax_analysis(file, True)
