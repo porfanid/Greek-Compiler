@@ -132,7 +132,7 @@ jobs:
     - name: Move report.pdf to root directory
       run: |
         mv out/report.pdf report.pdf
-        mv tests/correct.gr correct.gr
+        mv tests/syntax_inputs/correct.gr correct.gr
         mv tests/false.gr false.gr
         mv combined_compiler.py compiler.py
 

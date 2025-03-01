@@ -164,3 +164,4 @@ cython_debug/
 
 combined_compiler.py
 out/
+*.int
