@@ -554,8 +554,6 @@ def generate_intermediate_code(ast):
     expr_processor = ExpressionProcessor(code_gen)
     stmt_processor = StatementProcessor(code_gen, expr_processor)
     program_processor = ProgramProcessor(code_gen, stmt_processor)
-
     # Process the AST
     program_processor.process_program(ast)
-
     return code_gen

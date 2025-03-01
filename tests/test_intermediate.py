@@ -38,6 +38,49 @@ class TestIntermediateCodeGenerator(unittest.TestCase):
         quads_str = self.code_gen.get_quads()
         self.assertEqual(quads_str, '0: (ADD, x, y, z)\n')
 
+    def test_generate_intermediate_code_function(self):
+        ast = {
+            'type': 'PROGRAM',
+            'children': [
+                {'type': 'IDENTIFIER', 'value': 'test_program'},
+                {'type': 'BLOCK', 'children': [
+                    {'type': 'SUBPROGRAMS', 'children': [
+                        {'type': 'FUNCTION', 'children': [
+                            {'type': 'IDENTIFIER', 'value': 'increase'},
+                            {'type': 'FORMAL_PARAMETERS', 'children': [
+                                {'type': 'VAR_LIST', 'children': [
+                                    {'type': 'IDENTIFIER', 'value': 'a'},
+                                    {'type': 'IDENTIFIER', 'value': 'b'}
+                                ]}
+                            ]},
+                            {'type': 'FUNCTION_BLOCK', 'children': [
+                                {'type': 'SEQUENCE', 'children': [
+                                    {'type': 'ASSIGNMENT', 'children': [
+                                        {'type': 'IDENTIFIER', 'value': 'b'},
+                                        {'type': 'EXPRESSION', 'children': [
+                                            {'type': 'TERM', 'children': [
+                                                {'type': 'NUMBER', 'value': '1'}
+                                            ]}
+                                        ]}
+                                    ]}
+                                ]}
+                            ]}
+                        ]}
+                    ]}
+                ]}
+            ]
+        }
+        quads = get_intermediate_code(ast, "test_program.int", True)
+        expected_quads = [
+            (0, 'begin_block', 'test_program', '_', '_'),
+            (1, 'begin_block', 'increase', '_', '_'),
+            (2, ':=', '1', '_', 'b'),
+            (3, 'end_block', 'increase', '_', '_'),
+            (4, 'halt', '_', '_', '_'),
+            (5, 'end_block', 'test_program', '_', '_')
+        ]
+        self.assertEqual(quads, expected_quads)
+
 class TestIntermediateCodeGeneration(unittest.TestCase):
     def test_generate_intermediate_code(self):
         ast = {
@@ -66,3 +109,48 @@ class TestIntermediateCodeGeneration(unittest.TestCase):
             (3, 'end_block', 'test_program', '_', '_')
         ]
         self.assertEqual(quads, expected_quads)
+
+
+    def test_generate_intermediate_code_function(self):
+        ast = {
+            'type': 'PROGRAM',
+            'children': [
+                {'type': 'IDENTIFIER', 'value': 'test_program'},
+                {'type': 'BLOCK', 'children': [
+                    {'type': 'SUBPROGRAMS', 'children': [
+                        {'type': 'FUNCTION', 'children': [
+                            {'type': 'IDENTIFIER', 'value': 'increase'},
+                            {'type': 'FORMAL_PARAMETERS', 'children': [
+                                {'type': 'VAR_LIST', 'children': [
+                                    {'type': 'IDENTIFIER', 'value': 'a'},
+                                    {'type': 'IDENTIFIER', 'value': 'b'}
+                                ]}
+                            ]},
+                            {'type': 'FUNCTION_BLOCK', 'children': [
+                                {'type': 'SEQUENCE', 'children': [
+                                    {'type': 'ASSIGNMENT', 'children': [
+                                        {'type': 'IDENTIFIER', 'value': 'b'},
+                                        {'type': 'EXPRESSION', 'children': [
+                                            {'type': 'TERM', 'children': [
+                                                {'type': 'NUMBER', 'value': '1'}
+                                            ]}
+                                        ]}
+                                    ]}
+                                ]}
+                            ]}
+                        ]}
+                    ]}
+                ]}
+            ]
+        }
+        quads = get_intermediate_code(ast, "test_program.int", True)
+        expected_quads = [
+            (0, 'begin_block', 'test_program', '_', '_'),
+            (1, 'begin_block', 'increase', '_', '_'),
+            (2, ':=', '1', '_', 'b'),
+            (3, 'end_block', 'increase', '_', '_'),
+            (4, 'halt', '_', '_', '_'),
+            (5, 'end_block', 'test_program', '_', '_')
+        ]
+        self.assertEqual(quads, expected_quads)
+
