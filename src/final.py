@@ -5,7 +5,7 @@
 #########################################################################
 
 class RISCVCodeGenerator:
-    def __init__(self):
+    def __init__(self, symbol_table=None):
         self.code = []
         self.temp_map = {}  # Maps temporary variables to registers
         self.var_map = {}  # Maps program variables to memory locations
@@ -16,6 +16,7 @@ class RISCVCodeGenerator:
         self.current_function = None
         self.string_literals = {}  # For storing string literals if needed
         self.string_counter = 0
+        self.symbol_table = symbol_table
 
     def allocate_register(self, var):
         """Allocate a register for a variable or temporary."""
@@ -35,11 +36,21 @@ class RISCVCodeGenerator:
             return self.get_var_address(var)
 
     def get_var_address(self, var):
-        """Get or create a memory address for a variable."""
-        if var not in self.var_map:
-            self.var_map[var] = self.next_data_addr
-            self.next_data_addr += 4  # Assume 4 bytes per variable (32-bit)
-            self.global_vars.add(var)
+        """Get or create a memory address for a variable using the symbol table if available."""
+        if var in self.var_map:
+            return self.var_map[var]
+
+        # If we have a symbol table, try to get variable offset from it
+        if self.symbol_table:
+            entity = self.symbol_table.lookup(var)
+            if entity and hasattr(entity, 'offset'):
+                self.var_map[var] = entity.offset
+                return entity.offset
+
+        # If not found in symbol table or we don't have one
+        self.var_map[var] = self.next_data_addr
+        self.next_data_addr += 4  # Assume 4 bytes per variable (32-bit)
+        self.global_vars.add(var)
         return self.var_map[var]
 
     def get_assembly_label(self, quad_label):
@@ -360,7 +371,7 @@ class RISCVCodeGenerator:
         return '\n'.join(data_section + [''] + self.code)
 
 
-def generate_risc_v_code(quads):
+def generate_risc_v_code(quads, symbol_table=None):
     """
     Generate RISC-V assembly code from intermediate code quadruples.
 
@@ -369,7 +380,8 @@ def generate_risc_v_code(quads):
 
     Returns:
         String containing RISC-V assembly code
+        :param symbol_table: the symbol table of the program
     """
-    rv_generator = RISCVCodeGenerator()
+    rv_generator = RISCVCodeGenerator(symbol_table)
     rv_generator.generate_code_from_quads(quads)
     return rv_generator.get_complete_code()

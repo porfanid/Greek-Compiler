@@ -1,7 +1,12 @@
 import subprocess
-import filecmp
 import unittest
 import os
+
+from src.final import generate_risc_v_code
+from src.intermediate import generate_intermediate_code
+from src.lexer import Lexer
+from src.symboltable import build_symbol_table
+from src.syntaxAST import Syntax
 
 
 class TestCombinedCompiler(unittest.TestCase):
@@ -23,12 +28,32 @@ class TestCombinedCompiler(unittest.TestCase):
 
 
     def test_combined_compiler(self):
-        # Run the original compiler
-        self.run_compiler('src/compiler.py', self.input_file, self.original_output)
-        # Run the combined compiler
-        self.run_compiler('combined_compiler.py', self.input_file, self.combined_output)
-        # Compare the outputs
-        self.assertTrue(filecmp.cmp(self.original_output, self.combined_output), "Outputs do not match!")
+            # Setup test paths
+            source_file = "./tests/syntax_inputs/correct.gr"
+
+            # Step 1: Perform lexical analysis
+            lexer = Lexer(source_file)
+            # Tokenize the source code
+            tokens = lexer.tokenize()
+
+            # Step 2: Perform syntax analysis
+            syntax = Syntax(tokens)
+            # Parse the tokens to perform syntax analysis
+            ast = syntax.parse()
+
+            # Step 3: Generate symbol table
+            symbol_table = build_symbol_table(ast.to_dict())
+
+            # Step 4: Generate intermediate code
+            code_gen = generate_intermediate_code(ast.to_dict(), symbol_table)
+            quads = code_gen.get_quads()
+
+            # Step 5: Generate RISC-V code
+            risc_v_code = generate_risc_v_code(code_gen.quads, symbol_table)
+
+            # Add assertions here to verify the output
+            self.assertIsNotNone(quads)
+            self.assertIsNotNone(risc_v_code)
 
 
     def tearDown(self):

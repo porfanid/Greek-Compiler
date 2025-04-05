@@ -6,7 +6,7 @@
 # Finally, the parse method returns True if the program is syntactically correct, otherwise it returns False.   #
 #################################################################################################################
 
-from lexer import TokenType
+from src.lexer import TokenType
 
 
 class ASTNode:

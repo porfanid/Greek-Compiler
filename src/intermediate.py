@@ -456,9 +456,10 @@ class StatementProcessor:
 
 
 class ProgramProcessor:
-    def __init__(self, code_gen, stmt_processor):
+    def __init__(self, code_gen, stmt_processor, symbol_table=None):
         self.code_gen = code_gen
         self.stmt_processor = stmt_processor
+        self.symbol_table = symbol_table
 
     def process_program(self, ast):
         """Process a complete program AST."""
@@ -540,7 +541,7 @@ class ProgramProcessor:
 # Example usage                                                          #
 #########################################################################
 
-def generate_intermediate_code(ast):
+def generate_intermediate_code(ast, symbol_table=None):
     """
     Generate intermediate code from an abstract syntax tree.
 
@@ -549,11 +550,12 @@ def generate_intermediate_code(ast):
 
     Returns:
         IntermediateCodeGenerator instance with the generated quads
+        :param symbol_table: The symbol table that was generated
     """
     code_gen = IntermediateCodeGenerator()
     expr_processor = ExpressionProcessor(code_gen)
     stmt_processor = StatementProcessor(code_gen, expr_processor)
-    program_processor = ProgramProcessor(code_gen, stmt_processor)
+    program_processor = ProgramProcessor(code_gen, stmt_processor, symbol_table)
     # Process the AST
     program_processor.process_program(ast)
     return code_gen

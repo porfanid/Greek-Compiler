@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../s
 import unittest
 from src.intermediate import IntermediateCodeGenerator
 from src.compiler import get_intermediate_code
+from src.symboltable import build_symbol_table
 
 class TestIntermediateCodeGenerator(unittest.TestCase):
     def setUp(self):
@@ -70,7 +71,8 @@ class TestIntermediateCodeGenerator(unittest.TestCase):
                 ]}
             ]
         }
-        quads = get_intermediate_code(ast, "test_program.int", True)
+        symbol_table = build_symbol_table(ast)
+        quads = get_intermediate_code(ast, "test_program.int", symbol_table, True)
         expected_quads = [
             (0, 'begin_block', 'test_program', '_', '_'),
             (1, 'begin_block', 'increase', '_', '_'),
@@ -101,7 +103,8 @@ class TestIntermediateCodeGeneration(unittest.TestCase):
                 ]}
             ]
         }
-        quads = get_intermediate_code(ast, "test_program.int", True)
+        symbol_table = build_symbol_table(ast)
+        quads = get_intermediate_code(ast, "test_program.int", symbol_table, True)
         expected_quads = [
             (0, 'begin_block', 'test_program', '_', '_'),
             (1, ':=', '5', '_', 'a'),
@@ -143,7 +146,8 @@ class TestIntermediateCodeGeneration(unittest.TestCase):
                 ]}
             ]
         }
-        quads = get_intermediate_code(ast, "test_program.int", True)
+        symbol_table = build_symbol_table(ast)
+        quads = get_intermediate_code(ast, "test_program.int", symbol_table, True)
         expected_quads = [
             (0, 'begin_block', 'test_program', '_', '_'),
             (1, 'begin_block', 'increase', '_', '_'),
@@ -153,4 +157,3 @@ class TestIntermediateCodeGeneration(unittest.TestCase):
             (5, 'end_block', 'test_program', '_', '_')
         ]
         self.assertEqual(quads, expected_quads)
-
