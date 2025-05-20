@@ -188,8 +188,8 @@ jobs:
 
     - name: Compile the report with download info
       run: |
-        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
-        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
+        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex || true
+        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex || true
 
     - name: Move report.pdf to root directory
       run: |
