@@ -130,17 +130,73 @@ jobs:
     - name: Create output report directory
       run: mkdir -p out
 
-    - name: Compile the report
-      run: |
-        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
-        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
-
     - name: Move report.pdf to root directory
       run: |
         mv out/report.pdf report.pdf
         mv tests/syntax_inputs/correct.gr correct.gr
         mv tests/syntax_inputs/false.gr false.gr
         mv combined_compiler.py compiler.py
+
+    - name: Upload files to file.io
+      id: upload_to_fileio
+      run: |
+        # Δημιουργία ενός zip αρχείου με όλα τα απαραίτητα αρχεία
+        zip -r greek_compiler.zip compiler.py correct.gr false.gr src/ report/
+
+        # Ανέβασμα του zip στο file.io και λήψη του JSON response
+        RESPONSE=$(curl -F "file=@greek_compiler.zip" https://file.io/?expires=14d)
+
+        # Εξαγωγή του URL από το JSON response
+        DOWNLOAD_URL=$(echo $RESPONSE | grep -o '"link":"[^"]*"' | sed 's/"link":"\(.*\)"/\1/')
+
+        # Αποθήκευση του URL σε ένα αρχείο
+        echo "Κατεβάστε τον πλήρη κώδικα του μεταγλωττιστή από: $DOWNLOAD_URL" > download_url.txt
+
+        # Εμφάνιση του URL στα logs
+        echo "Download URL: $DOWNLOAD_URL"
+
+        # Αποθήκευση του URL ως output του βήματος για μελλοντική χρήση
+        echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+
+    - name: Create download info page for LaTeX
+      run: |
+        # Δημιουργία ενός ξεχωριστού LaTeX αρχείου με το URL
+        cat > report/download_info.tex << EOF
+        \section*{Λήψη Πλήρους Κώδικα}
+        Ο πλήρης κώδικας του μεταγλωττιστή Greek++ είναι διαθέσιμος για λήψη στον παρακάτω σύνδεσμο:
+
+        \begin{center}
+        \large\url{${{ steps.upload_to_fileio.outputs.download_url }}}
+        \end{center}
+    
+        \begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,title=Προσοχή]
+        Ο σύνδεσμος επιτρέπει μόνο μία λήψη! Αφού κατεβάσετε το αρχείο, ο σύνδεσμος δεν θα είναι πλέον διαθέσιμος.
+        \end{tcolorbox}
+    
+        Το αρχείο είναι σε μορφή .zip και περιέχει:
+        \begin{itemize}
+        \item \textbf{compiler.py} - Τον πλήρη κώδικα του μεταγλωττιστή
+        \item \textbf{report.pdf} - Την αναφορά (αυτό το έγγραφο)
+        \item \textbf{correct.gr} - Παράδειγμα σωστού προγράμματος Greek++
+        \item \textbf{false.gr} - Παράδειγμα λανθασμένου προγράμματος Greek++
+        \item \textbf{src/} - Τον πηγαίο κώδικα του μεταγλωττιστή πριν τη συγχώνευση
+        \end{itemize}
+        EOF
+
+    - name: Add required package for colorbox
+      run: |
+        # Εισαγωγή του πακέτου tcolorbox στο preample του report.tex εάν δεν υπάρχει ήδη
+        grep -q "\\usepackage{tcolorbox}" report/report.tex || sed -i '/\\usepackage{hyperref}/a \\usepackage{tcolorbox}' report/report.tex
+
+    - name: Include download info in LaTeX report
+      run: |
+        # Προσθήκη της αναφοράς στο αρχείο download_info.tex στο τέλος του document
+        sed -i '/\\end{document}/i \\include{download_info}' report/report.tex
+
+    - name: Compile the report with download info
+      run: |
+        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
+        xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
 
 
     - name: Upload combined_compiler.py
