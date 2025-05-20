@@ -179,7 +179,7 @@ jobs:
     - name: Add required package for colorbox
       run: |
         # Εισαγωγή του πακέτου tcolorbox στο preample του report.tex εάν δεν υπάρχει ήδη
-        grep -q "\\usepackage{tcolorbox}" report/report.tex || sed -i '/\usepackage{hyperref}/a \\usepackage{tcolorbox}' report/report.tex
+        grep -q "\usepackage{tcolorbox}" report/report.tex || sed -i '/\usepackage{hyperref}/a \usepackage{tcolorbox}' report/report.tex
 
     - name: Include download info in LaTeX report
       run: |
