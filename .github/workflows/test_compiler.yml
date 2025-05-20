@@ -184,13 +184,13 @@ jobs:
     - name: Include download info in LaTeX report
       run: |
         # Προσθήκη της αναφοράς στο αρχείο download_info.tex στο τέλος του document
-        sed -i '/\\end{document}/i \\include{download_info}' report/report.tex
+        sed -i '/\\end{document}/i \\include{download\_info}' report/report.tex
 
     - name: Compile the report with download info
       run: |
         xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
         xelatex -file-line-error -interaction=nonstopmode -synctex=1 -output-directory=out -shell-escape report/report.tex
-    
+
     - name: Move report.pdf to root directory
       run: |
         mv out/report.pdf report.pdf
