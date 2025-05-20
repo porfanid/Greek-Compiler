@@ -1,7 +1,7 @@
 #########################################################################
 # RISC-V Code Generator                                                 #
 # This part of the code generates RISC-V assembly from intermediate     #
-# quadruples code.                                                      #
+# quadruples code, following the approach from the lecture slides.      #
 #########################################################################
 
 class RISCVCodeGenerator:
@@ -17,6 +17,38 @@ class RISCVCodeGenerator:
         self.string_literals = {}  # For storing string literals if needed
         self.string_counter = 0
         self.symbol_table = symbol_table
+        self.framelength = 64  # Standard frame length for simplicity
+
+    def emit(self, instruction):
+        """Add an instruction to the generated code."""
+        self.code.append(instruction)
+
+    def emit_label(self, label):
+        """Emit a label."""
+        self.code.append(f"{label}:")
+
+    def get_assembly_label(self, quad_label):
+        """Convert a quad label to an assembly label."""
+        if quad_label not in self.label_map:
+            self.label_map[quad_label] = f"L{quad_label}"
+        return self.label_map[quad_label]
+
+    def get_var_offset(self, var):
+        """Get memory offset for a variable (simplified)."""
+        if var in self.var_map:
+            return self.var_map[var]
+            
+        # If we have a symbol table, get variable offset from it
+        if self.symbol_table:
+            entity = self.symbol_table.lookup(var)
+            if entity and hasattr(entity, 'offset'):
+                self.var_map[var] = entity.offset
+                return entity.offset
+
+        # Otherwise, assign a new offset
+        self.var_map[var] = self.next_data_addr
+        self.next_data_addr += 4  # Assume 4 bytes per variable (32-bit)
+        return self.var_map[var]
 
     def allocate_register(self, var):
         """Allocate a register for a variable or temporary."""
@@ -33,72 +65,58 @@ class RISCVCodeGenerator:
             return reg
         else:
             # Program variables are stored in memory
-            return self.get_var_address(var)
+            return self.get_var_offset(var)
 
-    def get_var_address(self, var):
-        """Get or create a memory address for a variable using the symbol table if available."""
-        if var in self.var_map:
-            return self.var_map[var]
+    # Implementation of gnlvcode as described in slides
+    def gnlvcode(self, var):
+        """Generate code to get the address of a non-local variable."""
+        # Start from current scope
+        self.emit(f"lw t0,-4(sp)")
+        
+        # Follow access links (simplified - assumes one level up)
+        # In a full implementation, this would traverse multiple levels
+        # based on the nesting level difference
+        
+        # Calculate address of the variable
+        offset = self.get_var_offset(var)
+        self.emit(f"addi t0,t0,-{offset}(sp)")
+        
+        # Now t0 contains the address of the variable
 
-        # If we have a symbol table, try to get variable offset from it
-        if self.symbol_table:
-            entity = self.symbol_table.lookup(var)
-            if entity and hasattr(entity, 'offset'):
-                self.var_map[var] = entity.offset
-                return entity.offset
-
-        # If not found in symbol table or we don't have one
-        self.var_map[var] = self.next_data_addr
-        self.next_data_addr += 4  # Assume 4 bytes per variable (32-bit)
-        self.global_vars.add(var)
-        return self.var_map[var]
-
-    def get_assembly_label(self, quad_label):
-        """Convert a quad label to an assembly label."""
-        if quad_label not in self.label_map:
-            self.label_map[quad_label] = f"L{quad_label}"
-        return self.label_map[quad_label]
-
-    def load_value(self, operand, dest_reg):
-        """Load a value (constant, variable, or temporary) into a register."""
-        if operand.startswith('T_'):
-            # If operand is a temporary, get its register
-            src_reg = self.temp_map.get(operand)
+    # Implementation of loadvr as described in slides
+    def loadvr(self, v, r):
+        """Load value from variable v into register r."""
+        if isinstance(v, int) or (isinstance(v, str) and v.isdigit()) or (isinstance(v, str) and v[0] == '-' and v[1:].isdigit()):
+            # v is a constant
+            self.emit(f"li {r},{v}")
+        elif v.startswith('T_'):
+            # v is a temporary variable, already in a register
+            src_reg = self.temp_map.get(v)
             if src_reg:
-                self.emit(f"mv {dest_reg}, {src_reg}")
+                self.emit(f"mv {r},{src_reg}")
             else:
-                # This should not happen in a well-formed program
-                self.emit(f"# Warning: Temporary {operand} not allocated")
-        elif operand.isdigit() or (operand[0] == '-' and operand[1:].isdigit()):
-            # If operand is a numeric constant
-            self.emit(f"li {dest_reg}, {operand}")
+                self.emit(f"# Warning: Temporary {v} not allocated")
         else:
-            # If operand is a program variable
-            addr = self.get_var_address(operand)
-            self.emit(f"lw {dest_reg}, {addr}(s0)")
+            # v is a program variable
+            # Simplified - assumes local variable
+            offset = self.get_var_offset(v)
+            self.emit(f"lw {r},-{offset}(sp)")
 
-    def store_value(self, src_reg, dest):
-        """Store a value from a register to a memory location."""
-        if dest.startswith('T_'):
-            # If destination is a temporary, get its register
-            dest_reg = self.temp_map.get(dest)
+    # Implementation of storerv as described in slides
+    def storerv(self, r, v):
+        """Store value from register r into variable v."""
+        if v.startswith('T_'):
+            # v is a temporary variable
+            dest_reg = self.temp_map.get(v)
             if dest_reg:
-                self.emit(f"mv {dest_reg}, {src_reg}")
+                self.emit(f"mv {dest_reg},{r}")
             else:
-                # This should not happen in a well-formed program
-                self.emit(f"# Warning: Temporary {dest} not allocated")
+                self.emit(f"# Warning: Temporary {v} not allocated")
         else:
-            # If destination is a program variable
-            addr = self.get_var_address(dest)
-            self.emit(f"sw {src_reg}, {addr}(s0)")
-
-    def emit(self, instruction):
-        """Add an instruction to the generated code."""
-        self.code.append(instruction)
-
-    def emit_label(self, label):
-        """Emit a label."""
-        self.code.append(f"{label}:")
+            # v is a program variable
+            # Simplified - assumes local variable
+            offset = self.get_var_offset(v)
+            self.emit(f"sw {r},-{offset}(sp)")
 
     def generate_data_section(self):
         """Generate the data section for variables."""
@@ -112,6 +130,9 @@ class RISCVCodeGenerator:
         for label, string in self.string_literals.items():
             data_section.append(f"{label}: .string \"{string}\"")
 
+        # Newline string for print operations
+        data_section.append("str_nl: .asciz \"\\n\" ")
+
         return data_section
 
     def generate_code_from_quads(self, quads):
@@ -119,6 +140,7 @@ class RISCVCodeGenerator:
         # Initialize code with entry point
         self.emit(".text")
         self.emit(".globl main")
+        self.emit("j Lmain")  # As per slide 62
 
         for quad in quads:
             label, op, arg1, arg2, result = quad
@@ -130,245 +152,219 @@ class RISCVCodeGenerator:
             # Process based on operation
             if op == "begin_block":
                 if arg1 == "τεστ":  # Main program
-                    self.emit("main:")
-                    self.emit("addi sp, sp, -64")  # Allocate stack frame
-                    self.emit("sw ra, 60(sp)")  # Save return address
-                    self.emit("sw s0, 56(sp)")  # Save frame pointer
-                    self.emit("addi s0, sp, 64")  # Set new frame pointer
+                    self.emit("Lmain:")
+                    self.emit(f"addi sp,sp,{self.framelength}")
+                    self.emit("mv gp,sp")
+                    # No need to save return address for main
                 else:
                     # Function or procedure
                     self.current_function = arg1
                     self.emit(f"{arg1}:")
-                    self.emit("addi sp, sp, -64")  # Allocate stack frame
-                    self.emit("sw ra, 60(sp)")  # Save return address
-                    self.emit("sw s0, 56(sp)")  # Save frame pointer
-                    self.emit("addi s0, sp, 64")  # Set new frame pointer
+                    self.emit("sw ra,(sp)")
+                    self.emit(f"addi fp,sp,{self.framelength}")
 
             elif op == "end_block":
                 if arg1 == "τεστ":  # Main program
-                    self.emit("lw ra, 60(sp)")  # Restore return address
-                    self.emit("lw s0, 56(sp)")  # Restore frame pointer
-                    self.emit("addi sp, sp, 64")  # Deallocate stack frame
-                    self.emit("ret")  # Return from main
+                    self.emit("li a7,10")
+                    self.emit("ecall")
                 else:
                     # Function or procedure
                     self.current_function = None
-                    self.emit("lw ra, 60(sp)")  # Restore return address
-                    self.emit("lw s0, 56(sp)")  # Restore frame pointer
-                    self.emit("addi sp, sp, 64")  # Deallocate stack frame
-                    self.emit("ret")  # Return from function
+                    self.emit("lw ra,(sp)")
+                    self.emit("jr ra")
 
             elif op == "+":
+                # Following slides 38-40 for arithmetic operations
                 t1_reg = "t0"
                 t2_reg = "t1"
-                result_reg = "t2" if not result.startswith('T_') else self.allocate_register(result)
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-                self.emit(f"add {result_reg}, {t1_reg}, {t2_reg}")
-
-                if not result.startswith('T_'):
-                    self.store_value(result_reg, result)
+                result_reg = "t2"
+                
+                self.loadvr(arg1, t1_reg)
+                self.loadvr(arg2, t2_reg)
+                self.emit(f"add {result_reg},{t1_reg},{t2_reg}")
+                self.storerv(result_reg, result)
 
             elif op == "-":
                 t1_reg = "t0"
                 t2_reg = "t1"
-                result_reg = "t2" if not result.startswith('T_') else self.allocate_register(result)
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-                self.emit(f"sub {result_reg}, {t1_reg}, {t2_reg}")
-
-                if not result.startswith('T_'):
-                    self.store_value(result_reg, result)
+                result_reg = "t2"
+                
+                self.loadvr(arg1, t1_reg)
+                self.loadvr(arg2, t2_reg)
+                self.emit(f"sub {result_reg},{t1_reg},{t2_reg}")
+                self.storerv(result_reg, result)
 
             elif op == "*":
                 t1_reg = "t0"
                 t2_reg = "t1"
-                result_reg = "t2" if not result.startswith('T_') else self.allocate_register(result)
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-                self.emit(f"mul {result_reg}, {t1_reg}, {t2_reg}")
-
-                if not result.startswith('T_'):
-                    self.store_value(result_reg, result)
+                result_reg = "t2"
+                
+                self.loadvr(arg1, t1_reg)
+                self.loadvr(arg2, t2_reg)
+                self.emit(f"mul {result_reg},{t1_reg},{t2_reg}")
+                self.storerv(result_reg, result)
 
             elif op == "/":
                 t1_reg = "t0"
                 t2_reg = "t1"
-                result_reg = "t2" if not result.startswith('T_') else self.allocate_register(result)
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-                self.emit(f"div {result_reg}, {t1_reg}, {t2_reg}")
-
-                if not result.startswith('T_'):
-                    self.store_value(result_reg, result)
+                result_reg = "t2"
+                
+                self.loadvr(arg1, t1_reg)
+                self.loadvr(arg2, t2_reg)
+                self.emit(f"div {result_reg},{t1_reg},{t2_reg}")
+                self.storerv(result_reg, result)
 
             elif op == ":=":
+                # Following slide 39 for assignment
                 src_reg = "t0"
-                dest_reg = "t1" if result.startswith('T_') else None
+                
+                self.loadvr(arg1, src_reg)
+                self.storerv(src_reg, result)
+                self.emit(f"# {result} := {arg1}")
 
-                self.load_value(arg1, src_reg)
-
-                if result.startswith('T_'):
-                    dest_reg = self.allocate_register(result)
-                    self.emit(f"mv {dest_reg}, {src_reg}")
-                else:
-                    self.store_value(src_reg, result)
-
-            elif op == "<":
+            elif op in ["<", "<=", ">", ">=", "=","<>"]:
+                # Following slide 38 for relational operations
                 t1_reg = "t0"
                 t2_reg = "t1"
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-
-                # Jump to the destination label if arg1 < arg2
+                
+                self.loadvr(arg1, t1_reg)
+                self.loadvr(arg2, t2_reg)
+                
                 target_label = self.get_assembly_label(result)
-                self.emit(f"blt {t1_reg}, {t2_reg}, {target_label}")
-
-            elif op == "<=":
-                t1_reg = "t0"
-                t2_reg = "t1"
-                result_reg = "t2" if result.startswith('T_') else None
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-
-                if result.startswith('T_'):
-                    # Store comparison result (1 if true, 0 if false)
-                    result_reg = self.allocate_register(result)
-                    self.emit(f"slt {result_reg}, {t2_reg}, {t1_reg}")  # result = (arg2 < arg1)
-                    self.emit(f"xori {result_reg}, {result_reg}, 1")  # result = !result
-                else:
-                    # Jump to the destination label if arg1 <= arg2
-                    target_label = self.get_assembly_label(result)
-                    self.emit(f"ble {t1_reg}, {t2_reg}, {target_label}")
-
-            elif op == ">":
-                t1_reg = "t0"
-                t2_reg = "t1"
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-
-                # Jump to the destination label if arg1 > arg2
-                target_label = self.get_assembly_label(result)
-                self.emit(f"bgt {t1_reg}, {t2_reg}, {target_label}")
-
-            elif op == ">=":
-                t1_reg = "t0"
-                t2_reg = "t1"
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-
-                # Jump to the destination label if arg1 >= arg2
-                target_label = self.get_assembly_label(result)
-                self.emit(f"bge {t1_reg}, {t2_reg}, {target_label}")
-
-            elif op == "=":
-                t1_reg = "t0"
-                t2_reg = "t1"
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-
-                # Jump to the destination label if arg1 == arg2
-                target_label = self.get_assembly_label(result)
-                self.emit(f"beq {t1_reg}, {t2_reg}, {target_label}")
-
-            elif op == "<>":
-                t1_reg = "t0"
-                t2_reg = "t1"
-
-                self.load_value(arg1, t1_reg)
-                self.load_value(arg2, t2_reg)
-
-                # Jump to the destination label if arg1 != arg2
-                target_label = self.get_assembly_label(result)
-                self.emit(f"bne {t1_reg}, {t2_reg}, {target_label}")
+                if op == "<":
+                    self.emit(f"blt {t1_reg},{t2_reg},{target_label}")
+                elif op == "<=":
+                    self.emit(f"ble {t1_reg},{t2_reg},{target_label}")
+                elif op == ">":
+                    self.emit(f"bgt {t1_reg},{t2_reg},{target_label}")
+                elif op == ">=":
+                    self.emit(f"bge {t1_reg},{t2_reg},{target_label}")
+                elif op == "=":
+                    self.emit(f"beq {t1_reg},{t2_reg},{target_label}")
+                elif op == "<>":
+                    self.emit(f"bne {t1_reg},{t2_reg},{target_label}")
 
             elif op == "jump":
-                # Unconditional jump
+                # Unconditional jump - slide 38
                 target_label = self.get_assembly_label(result)
                 self.emit(f"j {target_label}")
 
             elif op == "jumpz":
                 # Jump if zero (condition is false)
                 t1_reg = "t0"
-                self.load_value(arg1, t1_reg)
-
+                self.loadvr(arg1, t1_reg)
+                
                 target_label = self.get_assembly_label(result)
-                self.emit(f"beqz {t1_reg}, {target_label}")
+                self.emit(f"beqz {t1_reg},{target_label}")
 
             elif op == "jumpnz":
                 # Jump if not zero (condition is true)
                 t1_reg = "t0"
-                self.load_value(arg1, t1_reg)
-
+                self.loadvr(arg1, t1_reg)
+                
                 target_label = self.get_assembly_label(result)
-                self.emit(f"bnez {t1_reg}, {target_label}")
+                self.emit(f"bnez {t1_reg},{target_label}")
 
             elif op == "par":
-                # Handle parameter passing
-                # arg2 indicates parameter passing method (cv: call by value)
-                if arg2 == "cv":
-                    # Call by value - load the value into a register
+                # Handle parameter passing - slides 42-48
+                i = 0  # Parameter index (simplified)
+                
+                if arg2 == "cv":  # Call by value
+                    # Load the value into a register
                     t1_reg = "t0"
-                    self.load_value(arg1, t1_reg)
-                    # Store parameter in stack (simplified approach)
-                    self.emit(f"sw {t1_reg}, -4(sp)")
-                    self.emit(f"addi sp, sp, -4")
-                elif arg2 == "ret":
-                    # Return value parameter - save space for return value
-                    self.emit(f"addi sp, sp, -4")  # Reserve space for return value
+                    self.loadvr(arg1, t1_reg)
+                    # Store parameter in callee's frame
+                    self.emit(f"sw {t1_reg},-{12+4*i}(fp)")
+                elif arg2 == "ref":  # Call by reference
+                    # Get the address of the variable
+                    if self.is_local_var(arg1):
+                        # Local variable
+                        offset = self.get_var_offset(arg1)
+                        self.emit(f"addi t0,sp,-{offset}")
+                    else:
+                        # Non-local variable - use gnlvcode
+                        self.gnlvcode(arg1)
+                    # Pass the address
+                    self.emit(f"sw t0,-{12+4*i}(fp)")
+                elif arg2 == "ret":  # Return value parameter
+                    # Reserve space for return value
+                    self.emit(f"addi t0,sp,-{self.get_var_offset(arg1)}")
+                    self.emit(f"sw t0,-8(fp)")
 
             elif op == "call":
-                # Function or procedure call
-                self.emit(f"jal ra, {arg1}")
-                # Adjust stack pointer after call (parameters cleanup would be here)
+                # Function or procedure call - slides 55-61
+                # First, set up the frame pointer for the callee
+                self.emit(f"")
+                self.emit(f"addi fp,sp,{self.framelength}")
+                
+                # Set up the access link (dynamic link)
+                if self.is_same_level_call(arg1):
+                    # Same level call
+                    self.emit("lw t0,-4(sp)")
+                    self.emit("sw t0,-4(fp)")
+                else:
+                    # Different level call - callee is at a different nesting level
+                    # Here we assume the callee is a direct child - would need more complex logic otherwise
+                    self.emit("sw sp,-4(fp)")
+                
+                # Actual call
+                self.emit(f"addi sp,sp,{self.framelength}")
+                self.emit(f"jal {arg1}")
+                self.emit(f"addi sp,sp,-{self.framelength}")
 
             elif op == "retv":
-                # Return with value
+                # Return with value - slide 41
                 t1_reg = "t0"
-                self.load_value(arg1, t1_reg)
-                self.emit(f"mv a0, {t1_reg}")  # Return value in a0
+                self.loadvr(arg1, t1_reg)
+                self.emit("lw t0,-8(sp)")
+                self.emit(f"sw {t1_reg},(t0)")
 
             elif op == "ret":
                 # Return without value
-                pass  # The end_block will handle the actual return
+                # Nothing special needed here - end_block will handle the return
+                pass
 
             elif op == "in":
-                # Input operation
-                self.emit(f"li a7, 5")  # System call code for reading integer
-                self.emit(f"ecall")  # Make the system call
-                self.emit(f"mv t0, a0")  # Move input value to t0
-                self.store_value("t0", result)  # Store input in the result variable
+                # Input operation - slide 15
+                self.emit(f"li a7,5")
+                self.emit(f"ecall")
+                self.emit(f"mv t0,a0")
+                self.storerv("t0", result)
 
             elif op == "out":
-                # Output operation
+                # Output operation - slide 15
                 t1_reg = "t0"
-                self.load_value(arg1, t1_reg)
-                self.emit(f"mv a0, {t1_reg}")  # Move value to a0 for printing
-                self.emit(f"li a7, 1")  # System call code for printing integer
-                self.emit(f"ecall")  # Make the system call
+                self.loadvr(arg1, t1_reg)
+                self.emit(f"mv a0,{t1_reg}")
+                self.emit(f"li a7,1")
+                self.emit(f"ecall")
+                
                 # Print a newline
-                self.emit(f"li a0, 10")  # Newline character
-                self.emit(f"li a7, 11")  # System call code for printing character
-                self.emit(f"ecall")  # Make the system call
+                self.emit(f"la a0,str_nl")
+                self.emit(f"li a7,4")
+                self.emit(f"ecall")
 
             elif op == "halt":
-                # Program termination
-                self.emit(f"li a7, 10")  # System call code for exit
-                self.emit(f"ecall")  # Make the system call
+                # Program termination - slide 17
+                self.emit(f"li a7,10")
+                self.emit(f"ecall")
+
+    def is_local_var(self, var):
+        """Simplified check if variable is local (would use symbol table in full implementation)."""
+        # In a real implementation, this would check the symbol table
+        # For now, we'll assume most variables are local
+        return not var.startswith('global_')
+
+    def is_same_level_call(self, func_name):
+        """Simplified check if call is to the same nesting level."""
+        # In a real implementation, this would check nesting levels in the symbol table
+        # For simplicity, we'll assume same level calls
+        return True  
 
     def get_complete_code(self):
         """Return the complete generated RISC-V assembly code."""
         data_section = self.generate_data_section()
-        return '\n'.join(data_section + [''] + self.code)
+        return '\n'.join(self.code)
 
 
 def generate_risc_v_code(quads, symbol_table=None):
@@ -377,10 +373,10 @@ def generate_risc_v_code(quads, symbol_table=None):
 
     Args:
         quads: List of quadruples (tuples) generated by IntermediateCodeGenerator
+        symbol_table: The symbol table of the program
 
     Returns:
         String containing RISC-V assembly code
-        :param symbol_table: the symbol table of the program
     """
     rv_generator = RISCVCodeGenerator(symbol_table)
     rv_generator.generate_code_from_quads(quads)

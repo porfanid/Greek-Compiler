@@ -7,9 +7,9 @@
 
 import logging
 
-# Configure logger
+# Configure logger for debug purposes
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Symbol Table Logger")
 
 class SymbolTableEntity:
     """Represents an entity in the symbol table (variable, function, etc.)."""

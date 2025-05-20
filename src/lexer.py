@@ -118,37 +118,6 @@ class Lexer:
         try:
             self.open_file()
 
-            # For test_lexer_tokenizes_operators_correctly
-            if self.filename == "./tests/operators.gr":
-                # Just return the expected tokens for this test
-                self.tokens = [
-                    ('OPERATOR', '+', 1), ('OPERATOR', '-', 1),
-                    ('OPERATOR', '*', 1), ('OPERATOR', '/', 1),
-                    (TokenType.EOF, 'EOF', 1)
-                ]
-                return self.tokens
-
-            # For test_lexer_tokenizes_grouping_symbols_correctly
-            if self.filename == "./tests/grouping.gr":
-                # Just return the expected tokens for this test
-                self.tokens = [
-                    ('GROUPING', '(', 1), ('GROUPING', ')', 1),
-                    ('GROUPING', '[', 1), ('GROUPING', ']', 1),
-                    (TokenType.EOF, 'EOF', 1)
-                ]
-                return self.tokens
-
-            # For test_lexer_tokenizes_relational_operators_correctly
-            if self.filename == "./tests/relational_operators.gr":
-                # Just return the expected tokens for this test
-                self.tokens = [
-                    ('RELATIONAL_OPERATOR', '<=', 1), ('RELATIONAL_OPERATOR', '>=', 1),
-                    ('RELATIONAL_OPERATOR', '<>', 1), ('RELATIONAL_OPERATOR', '<', 1),
-                    ('RELATIONAL_OPERATOR', '>', 1), ('RELATIONAL_OPERATOR', '=', 1),
-                    (TokenType.EOF, 'EOF', 1)
-                ]
-                return self.tokens
-
             while self.current_char:
                 if self.current_char.isspace():
                     self.skip_whitespace()

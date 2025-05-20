@@ -1,10 +1,13 @@
 #########################################################################
 # Intermediate Code Generator                                           #
-# This part of the code generates intermediate code after lexical       #
-# and syntactic analysis.                                               #
+# This part of the code generates intermediate code after lex           #
+# and syntax analysis.                                                  #
 #########################################################################
 
 class IntermediateCodeGenerator:
+    """
+    Class to generate intermediate code in the form of quadruples.
+    """
     def __init__(self):
         self.quads = []  # List to store the generated quadruples
         self.temp_counter = 0  # Counter for temporary variables
@@ -70,6 +73,11 @@ class IntermediateCodeGenerator:
 
 
 class ExpressionProcessor:
+    """
+    Class to process expressions and generate intermediate code.
+    It processes expressions, terms, and conditions based on the AST structure.
+    """
+
     def __init__(self, code_gen):
         self.code_gen = code_gen
 
@@ -77,6 +85,7 @@ class ExpressionProcessor:
         """Process an expression node based on the AST structure."""
         if expr_node['type'] == 'EXPRESSION':
             # Process children nodes
+            #Example of object: {'type': 'PROGRAM', 'children': [{'type': 'IDENTIFIER', 'value': 'τεστ', 'line': 1},...]}
             if 'children' in expr_node and expr_node['children']:
                 for child in expr_node['children']:
                     if child['type'] == 'BINARY_OPERATION':
@@ -501,7 +510,7 @@ class ProgramProcessor:
             self.code_gen.gen_quad("end_block", program_name, "_", "_")
 
     def process_function(self, function_node):
-        """Process a function definition."""
+        """Process a function."""
         if 'children' in function_node and len(function_node['children']) >= 3:
             function_name = function_node['children'][0]['value']
             block = function_node['children'][2]
@@ -519,7 +528,7 @@ class ProgramProcessor:
             self.code_gen.gen_quad("end_block", function_name, "_", "_")
 
     def process_procedure(self, procedure_node):
-        """Process a procedure definition."""
+        """Process a procedure."""
         if 'children' in procedure_node and len(procedure_node['children']) >= 3:
             procedure_name = procedure_node['children'][0]['value']
             block = procedure_node['children'][2]
@@ -537,9 +546,9 @@ class ProgramProcessor:
             self.code_gen.gen_quad("end_block", procedure_name, "_", "_")
 
 
-#########################################################################
-# Example usage                                                          #
-#########################################################################
+##################################################################################
+# Function that uses the classes generated above to get the intermediate code    #
+##################################################################################
 
 def generate_intermediate_code(ast, symbol_table=None):
     """
@@ -556,6 +565,6 @@ def generate_intermediate_code(ast, symbol_table=None):
     expr_processor = ExpressionProcessor(code_gen)
     stmt_processor = StatementProcessor(code_gen, expr_processor)
     program_processor = ProgramProcessor(code_gen, stmt_processor, symbol_table)
-    # Process the AST
+    # Process the AST and return the generated code
     program_processor.process_program(ast)
     return code_gen
