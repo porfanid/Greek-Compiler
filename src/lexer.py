@@ -110,8 +110,8 @@ class Lexer:
             self.advance()
 
         if identifier in KEYWORDS:
-            return (TokenType.KEYWORD, identifier, line_number)
-        return (TokenType.IDENTIFIER, identifier, line_number)
+            return TokenType.KEYWORD, identifier, line_number
+        return TokenType.IDENTIFIER, identifier, line_number
 
     def tokenize(self):
         """Tokenize the input file character by character."""
