@@ -1,7 +1,7 @@
 
 # Greek Programming Language Compiler
 
-This project is a compiler for a custom programming language with Greek keywords. It includes a lexer, parser, and unit tests to ensure the correctness of the implementation.
+This project is a compiler for a custom programming language with Greek keywords. It includes a lexer, parser, and unit tests to ensure the correctness of the implementation. Ypou can find the rules of the language in the language rules folder
 
 ## Table of Contents
 
